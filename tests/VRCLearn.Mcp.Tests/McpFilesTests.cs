@@ -53,7 +53,7 @@ public sealed class McpFilesTests
     [Fact]
     public void CancelReturnsNullAndEndsTheRequest()
     {
-        RunSta(()
+        RunSta(() =>
         {
             var files = new McpFiles(CancellationToken.None);
             string? id = null;
