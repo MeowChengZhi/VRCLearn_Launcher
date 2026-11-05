@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CommunityToolkit.Mvvm.Input;
 using VRCLearn.App.Mcp;
+using VRCLearn.Core.Versioning;
 using Xunit;
 
 namespace VRCLearn.Mcp.Tests;
@@ -136,7 +137,65 @@ public sealed class McpObjectsTests
         Assert.Equal(7, items[1].GetInt32());
         Assert.Equal(JsonValueKind.Null, items[2].ValueKind);
         Assert.Equal(nameof(TestMode.Ready), items[3].GetString());
-        Assert.Throws<ArgumentException>(() => objects.Inspect(new TestViewModel(), nameof(TestViewModel.Selected)));
+    }
+
+    [Fact]
+    public void NonScalarStructValuesUseTextInsteadOfTemporaryBoxReferences()
+    {
+        var objects = new McpObjects();
+        var unity = UnityVersion.TryParse("2022.3.22f1") ?? throw new InvalidOperationException("Unity 版本测试值无效");
+        var version = new TestVersion(1, "中文版本");
+        var target = new TestViewModel { Version = version };
+
+        Assert.Equal("2022.3.22f1", Assert.IsType<string>(objects.Value(unity)));
+        Assert.Equal(version.ToString(), Assert.IsType<string>(objects.Value(version)));
+
+        var description = Json(objects.Describe(target));
+        var value = description.GetProperty("properties").GetProperty(nameof(target.Version)).GetProperty("value");
+        Assert.Equal(JsonValueKind.String, value.ValueKind);
+        Assert.Equal(version.ToString(), value.GetString());
+    }
+
+    [Fact]
+    public void InspectScalarNullAndStructPropertiesReturnsOnlyTheirValues()
+    {
+        var objects = new McpObjects();
+        var target = new TestViewModel
+        {
+            Name = @"D:\中文 路径\模型",
+            Count = 12,
+            Enabled = true,
+            Mode = TestMode.Ready,
+            Version = new TestVersion(2, "中文版本"),
+        };
+
+        var text = Json(objects.Inspect(target, nameof(target.Name)));
+        Assert.Equal(target.Name, text.GetProperty("value").GetString());
+        Assert.Single(text.EnumerateObject());
+        Assert.Equal(12, Json(objects.Inspect(target, nameof(target.Count))).GetProperty("value").GetInt32());
+        Assert.True(Json(objects.Inspect(target, nameof(target.Enabled))).GetProperty("value").GetBoolean());
+        Assert.Equal(nameof(TestMode.Ready), Json(objects.Inspect(target, nameof(target.Mode))).GetProperty("value").GetString());
+
+        var empty = Json(objects.Inspect(target, nameof(target.Selected)));
+        Assert.Equal(JsonValueKind.Null, empty.GetProperty("value").ValueKind);
+        Assert.Single(empty.EnumerateObject());
+
+        var version = Json(objects.Inspect(target, nameof(target.Version)));
+        Assert.Equal(target.Version.ToString(), version.GetProperty("value").GetString());
+        Assert.Single(version.EnumerateObject());
+
+        var selected = new TestItem("仍是同一对象");
+        target.Selected = selected;
+        target.Items = [selected];
+        var child = Json(objects.Inspect(target, nameof(target.Selected)));
+        Assert.Same(target.Selected, objects.Resolve(child.GetProperty("reference").GetString()!));
+        Assert.True(child.TryGetProperty("properties", out _));
+        Assert.False(child.TryGetProperty("value", out _));
+
+        var collection = Json(objects.Inspect(target, nameof(target.Items)));
+        Assert.Single(collection.GetProperty("items").EnumerateArray());
+        Assert.True(collection.TryGetProperty("total", out _));
+        Assert.False(collection.TryGetProperty("value", out _));
     }
 
     [Fact]
@@ -328,6 +387,8 @@ public sealed class McpObjectsTests
 
     public sealed record TestItem(string Name);
 
+    public readonly record struct TestVersion(int Major, string Label);
+
     public sealed class TestViewModel
     {
         private string _name = "初始名称";
@@ -357,6 +418,8 @@ public sealed class McpObjectsTests
         public bool Enabled { get; set; }
 
         public TestMode Mode { get; set; }
+
+        public TestVersion Version { get; set; }
 
         public TestItem? Selected { get; set; }
 
