@@ -71,6 +71,29 @@ jobs:
             throw "dotnet publish failed ($LASTEXITCODE)."
           }
 
+      - name: MCP tests
+        shell: pwsh
+        run: |
+          if (Test-Path -LiteralPath "tests/VRCLearn.Mcp.Tests/VRCLearn.Mcp.Tests.csproj") {
+            dotnet test tests/VRCLearn.Mcp.Tests/VRCLearn.Mcp.Tests.csproj -c Release --logger "trx;LogFileName=mcp.trx"
+            if ($LASTEXITCODE -ne 0) { throw "MCP tests failed ($LASTEXITCODE)." }
+          }
+
+      - name: Upload portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: VRCLearnLauncher-MCP-portable
+          path: artifacts/publish
+          if-no-files-found: error
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCP-test-report
+          path: tests/VRCLearn.Mcp.Tests/TestResults/*.trx
+          if-no-files-found: ignore
+
       - name: Install Inno Setup
         shell: pwsh
         run: |
