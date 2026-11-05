@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using VRCLearn.App.ViewModels;
 using VRCLearn.App.Views;
+using VRCLearn.App.Mcp;
 using VRCLearn.Core.Resources;
 using VRCLearn.Infrastructure.Storage;
 
@@ -304,6 +305,11 @@ public sealed class DialogService
     /// <summary>选一个已存在的目录；取消返回 null。</summary>
     public string? PickFolder(string title, string initialDirectory = "", Window? owner = null)
     {
+        if (McpFiles.Current.Value is { } mcp)
+        {
+            return mcp.Request("folder", title, initialPath: initialDirectory)?.FirstOrDefault();
+        }
+
         var dialog = new OpenFolderDialog
         {
             Title = title,
@@ -321,6 +327,11 @@ public sealed class DialogService
         Window? owner = null,
         string initialDirectory = "")
     {
+        if (McpFiles.Current.Value is { } mcp)
+        {
+            return mcp.Request("file", title, filter, initialDirectory)?.FirstOrDefault();
+        }
+
         var dialog = new OpenFileDialog
         {
             Title = title,
@@ -335,6 +346,11 @@ public sealed class DialogService
     /// <summary>选多个已存在的文件；取消返回空数组。</summary>
     public string[] PickFiles(string title, string filter, Window? owner = null)
     {
+        if (McpFiles.Current.Value is { } mcp)
+        {
+            return mcp.Request("files", title, filter) ?? [];
+        }
+
         var dialog = new OpenFileDialog
         {
             Title = title,
@@ -348,6 +364,11 @@ public sealed class DialogService
     /// <summary>选一个保存位置；取消返回 null。</summary>
     public string? PickSaveFile(string title, string fileName, string filter, Window? owner = null)
     {
+        if (McpFiles.Current.Value is { } mcp)
+        {
+            return mcp.Request("save", title, filter, fileName)?.FirstOrDefault();
+        }
+
         var dialog = new SaveFileDialog
         {
             Title = title,
