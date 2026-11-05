@@ -26,6 +26,8 @@ VRCLearn Launcher 把 VPM 仓库、包与 Unity 项目集中在一处管理，�
 
 ## 功能
 
+- **MCP (此 Fork)**: `VRCLearnLauncher.exe --mcp` 启动本机 MCP, 覆盖原生页面、命令、对话框与文件选择. 连接与操作方法见 [docs/mcp.md](docs/mcp.md).
+
 - **仓库**：管理 VPM 仓库，搜索、安装与升级包，自动处理依赖
 - **项目**：列表、新建、收藏、归档；按所选 Unity 版本启动；备份、还原与导出
 - **资源**：管理本地 unitypackage，支持封面、标签、搜索与说明书
