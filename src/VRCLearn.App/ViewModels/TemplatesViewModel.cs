@@ -153,7 +153,7 @@ public sealed partial class TemplatesViewModel : PageViewModelBase
     {
         _editingId = id;
         EditorTitle = title;
-        EditorName = source?.Display ?? "";
+        EditorName = source?.Definition?.DisplayName ?? source?.Display ?? "";
         EditorUnityVersion = "";
         EditorDependencies.Clear();
         EditorUnityPackages.Clear();
@@ -279,6 +279,10 @@ public sealed partial class TemplatesViewModel : PageViewModelBase
 
         try
         {
+            var files = _editingId is null
+                ? null
+                : _library.Templates.FirstOrDefault(x => x.Id == _editingId)?.Definition?.Files;
+
             await _userTemplates.SaveAsync(
                 new AlcomTemplate(
                     name,
@@ -287,7 +291,8 @@ public sealed partial class TemplatesViewModel : PageViewModelBase
                     EditorUnityVersion.Trim().Length > 0 ? EditorUnityVersion.Trim() : null,
                     dependencies,
                     [.. EditorUnityPackages],
-                    DateTimeOffset.Now),
+                    DateTimeOffset.Now,
+                    files),
                 CancellationToken.None);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
