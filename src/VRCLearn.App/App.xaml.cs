@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using VRCLearn.App.Plugins;
+using VRCLearn.App.Mcp;
 using VRCLearn.App.Services;
 using VRCLearn.App.ViewModels;
 using VRCLearn.Core.Configuration;
@@ -21,6 +22,7 @@ public partial class App : Application
 {
     private ServiceProvider? _services;
     private SingleInstance? _singleInstance;
+    private McpHost? _mcp;
 
     [STAThread]
     private static void Main()
@@ -121,6 +123,23 @@ public partial class App : Application
         }
 
         InheritAlcomTemplates(_services, paths, startupLogger);
+
+        if (e.Args.Contains("--mcp"))
+        {
+            _ = StartMcpAsync(paths, e.Args);
+        }
+    }
+
+    private async Task StartMcpAsync(AppPaths paths, string[] args)
+    {
+        try
+        {
+            _mcp = await McpHost.StartAsync(_services!, paths, args);
+        }
+        catch (Exception exception)
+        {
+            _services?.GetRequiredService<ILogger<App>>().LogError(exception, "MCP 启动失败");
+        }
     }
 
     private void HonourArguments(IReadOnlyList<string> arguments) => Dispatcher.Invoke(() =>
@@ -285,6 +304,7 @@ public partial class App : Application
         _services?.GetService<ILogger<App>>()?.LogInformation("VRCLearn Launcher exiting");
 
         _singleInstance?.Dispose();
+        _mcp?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _services?.Dispose();
         base.OnExit(e);
     }
