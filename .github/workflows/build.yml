@@ -86,6 +86,17 @@ jobs:
           path: artifacts/publish
           if-no-files-found: error
 
+      - name: Upload launcher update
+        uses: actions/upload-artifact@v4
+        with:
+          name: VRCLearnLauncher-MCP-update
+          path: |
+            artifacts/publish/VRCLearnLauncher.dll
+            artifacts/publish/VRCLearnLauncher.exe
+            artifacts/publish/VRCLearnLauncher.deps.json
+            artifacts/publish/VRCLearnLauncher.runtimeconfig.json
+          if-no-files-found: error
+
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
