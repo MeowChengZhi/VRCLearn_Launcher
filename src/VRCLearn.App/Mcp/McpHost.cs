@@ -105,8 +105,8 @@ public sealed class McpHost : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await _application.StopAsync(TimeSpan.FromSeconds(3));
-        await _application.DisposeAsync();
+        await _application.StopAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+        await _application.DisposeAsync().ConfigureAwait(false);
         File.Delete(_discoveryPath);
     }
 }

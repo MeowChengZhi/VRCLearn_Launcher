@@ -75,12 +75,14 @@ public sealed class McpFiles
         }
 
         _answer = fullPaths;
+        Pending = null;
         _frame.Continue = false;
     }
 
     private void Cancel()
     {
         _answer = null;
+        Pending = null;
         if (_frame is { } frame)
         {
             frame.Continue = false;

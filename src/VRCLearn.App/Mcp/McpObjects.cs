@@ -41,6 +41,11 @@ public sealed class McpObjects
             return value is Enum ? value.ToString() : value;
         }
 
+        if (value.GetType().IsValueType)
+        {
+            return value.ToString();
+        }
+
         if (value is Type or MemberInfo or Delegate or Task or IServiceProvider)
         {
             return null;
@@ -59,7 +64,7 @@ public sealed class McpObjects
         if (property is not null)
         {
             var value = Property(target, property).GetValue(target);
-            if (value is null || IsScalar(value.GetType()))
+            if (value is null || IsScalar(value.GetType()) || value.GetType().IsValueType)
             {
                 return new { value = Value(value) };
             }
